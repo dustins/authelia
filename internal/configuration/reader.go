@@ -4,16 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/viper"
+
 	"github.com/authelia/authelia/internal/configuration/schema"
 	"github.com/authelia/authelia/internal/configuration/validator"
-	"github.com/spf13/viper"
 )
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
 
 // Read a YAML configuration and create a Configuration object out of it.
 func Read(configPath string) (*schema.Configuration, []error) {

@@ -7,14 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/authelia/authelia/internal/authentication"
-	"github.com/authelia/authelia/internal/authorization"
-	"github.com/authelia/authelia/internal/configuration/schema"
-	"github.com/authelia/authelia/internal/mocks"
+	"github.com/authelia/authelia/internal/session"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/authelia/authelia/internal/authentication"
+	"github.com/authelia/authelia/internal/authorization"
+	"github.com/authelia/authelia/internal/configuration/schema"
+	"github.com/authelia/authelia/internal/mocks"
 )
 
 // Test getOriginalURL
@@ -144,21 +147,21 @@ func TestShouldCheckAuthorizationMatching(t *testing.T) {
 		ExpectedMatching authorizationMatching
 	}
 	rules := []Rule{
-		Rule{"bypass", authentication.NotAuthenticated, Authorized},
-		Rule{"bypass", authentication.OneFactor, Authorized},
-		Rule{"bypass", authentication.TwoFactor, Authorized},
+		{"bypass", authentication.NotAuthenticated, Authorized},
+		{"bypass", authentication.OneFactor, Authorized},
+		{"bypass", authentication.TwoFactor, Authorized},
 
-		Rule{"one_factor", authentication.NotAuthenticated, NotAuthorized},
-		Rule{"one_factor", authentication.OneFactor, Authorized},
-		Rule{"one_factor", authentication.TwoFactor, Authorized},
+		{"one_factor", authentication.NotAuthenticated, NotAuthorized},
+		{"one_factor", authentication.OneFactor, Authorized},
+		{"one_factor", authentication.TwoFactor, Authorized},
 
-		Rule{"two_factor", authentication.NotAuthenticated, NotAuthorized},
-		Rule{"two_factor", authentication.OneFactor, NotAuthorized},
-		Rule{"two_factor", authentication.TwoFactor, Authorized},
+		{"two_factor", authentication.NotAuthenticated, NotAuthorized},
+		{"two_factor", authentication.OneFactor, NotAuthorized},
+		{"two_factor", authentication.TwoFactor, Authorized},
 
-		Rule{"deny", authentication.NotAuthenticated, NotAuthorized},
-		Rule{"deny", authentication.OneFactor, Forbidden},
-		Rule{"deny", authentication.TwoFactor, Forbidden},
+		{"deny", authentication.NotAuthenticated, NotAuthorized},
+		{"deny", authentication.OneFactor, Forbidden},
+		{"deny", authentication.TwoFactor, Forbidden},
 	}
 
 	url, _ := url.ParseRequestURI("https://test.example.com")
@@ -166,7 +169,7 @@ func TestShouldCheckAuthorizationMatching(t *testing.T) {
 	for _, rule := range rules {
 		authorizer := authorization.NewAuthorizer(schema.AccessControlConfiguration{
 			DefaultPolicy: "deny",
-			Rules: []schema.ACLRule{schema.ACLRule{
+			Rules: []schema.ACLRule{{
 				Domain: "test.example.com",
 				Policy: rule.Policy,
 			}},
@@ -416,23 +419,23 @@ func (p Pair) String() string {
 
 func TestShouldVerifyAuthorizationsUsingSessionCookie(t *testing.T) {
 	testCases := []Pair{
-		Pair{"https://test.example.com", "", authentication.NotAuthenticated, 401},
-		Pair{"https://bypass.example.com", "", authentication.NotAuthenticated, 200},
-		Pair{"https://one-factor.example.com", "", authentication.NotAuthenticated, 401},
-		Pair{"https://two-factor.example.com", "", authentication.NotAuthenticated, 401},
-		Pair{"https://deny.example.com", "", authentication.NotAuthenticated, 401},
+		{"https://test.example.com", "", authentication.NotAuthenticated, 401},
+		{"https://bypass.example.com", "", authentication.NotAuthenticated, 200},
+		{"https://one-factor.example.com", "", authentication.NotAuthenticated, 401},
+		{"https://two-factor.example.com", "", authentication.NotAuthenticated, 401},
+		{"https://deny.example.com", "", authentication.NotAuthenticated, 401},
 
-		Pair{"https://test.example.com", "john", authentication.OneFactor, 403},
-		Pair{"https://bypass.example.com", "john", authentication.OneFactor, 200},
-		Pair{"https://one-factor.example.com", "john", authentication.OneFactor, 200},
-		Pair{"https://two-factor.example.com", "john", authentication.OneFactor, 401},
-		Pair{"https://deny.example.com", "john", authentication.OneFactor, 403},
+		{"https://test.example.com", "john", authentication.OneFactor, 403},
+		{"https://bypass.example.com", "john", authentication.OneFactor, 200},
+		{"https://one-factor.example.com", "john", authentication.OneFactor, 200},
+		{"https://two-factor.example.com", "john", authentication.OneFactor, 401},
+		{"https://deny.example.com", "john", authentication.OneFactor, 403},
 
-		Pair{"https://test.example.com", "john", authentication.TwoFactor, 403},
-		Pair{"https://bypass.example.com", "john", authentication.TwoFactor, 200},
-		Pair{"https://one-factor.example.com", "john", authentication.TwoFactor, 200},
-		Pair{"https://two-factor.example.com", "john", authentication.TwoFactor, 200},
-		Pair{"https://deny.example.com", "john", authentication.TwoFactor, 403},
+		{"https://test.example.com", "john", authentication.TwoFactor, 403},
+		{"https://bypass.example.com", "john", authentication.TwoFactor, 200},
+		{"https://one-factor.example.com", "john", authentication.TwoFactor, 200},
+		{"https://two-factor.example.com", "john", authentication.TwoFactor, 200},
+		{"https://deny.example.com", "john", authentication.TwoFactor, 403},
 	}
 
 	for _, testCase := range testCases {
@@ -469,7 +472,38 @@ func TestShouldDestroySessionWhenInactiveForTooLong(t *testing.T) {
 	clock := mocks.TestingClock{}
 	clock.Set(time.Now())
 
-	mock.Ctx.Configuration.Session.Inactivity = 10
+	mock.Ctx.Configuration.Session.Inactivity = "10"
+	// Reload the session provider since the configuration is indirect
+	mock.Ctx.Providers.SessionProvider = session.NewProvider(mock.Ctx.Configuration.Session)
+	assert.Equal(t, time.Second*10, mock.Ctx.Providers.SessionProvider.Inactivity)
+
+	userSession := mock.Ctx.GetSession()
+	userSession.Username = "john"
+	userSession.AuthenticationLevel = authentication.TwoFactor
+	userSession.LastActivity = clock.Now().Add(-1 * time.Hour).Unix()
+	mock.Ctx.SaveSession(userSession)
+
+	mock.Ctx.Request.Header.Set("X-Original-URL", "https://two-factor.example.com")
+
+	VerifyGet(mock.Ctx)
+
+	// The session has been destroyed
+	newUserSession := mock.Ctx.GetSession()
+	assert.Equal(t, "", newUserSession.Username)
+	assert.Equal(t, authentication.NotAuthenticated, newUserSession.AuthenticationLevel)
+}
+
+func TestShouldDestroySessionWhenInactiveForTooLongUsingDurationNotation(t *testing.T) {
+	mock := mocks.NewMockAutheliaCtx(t)
+	defer mock.Close()
+
+	clock := mocks.TestingClock{}
+	clock.Set(time.Now())
+
+	mock.Ctx.Configuration.Session.Inactivity = "10s"
+	// Reload the session provider since the configuration is indirect
+	mock.Ctx.Providers.SessionProvider = session.NewProvider(mock.Ctx.Configuration.Session)
+	assert.Equal(t, time.Second*10, mock.Ctx.Providers.SessionProvider.Inactivity)
 
 	userSession := mock.Ctx.GetSession()
 	userSession.Username = "john"
@@ -494,7 +528,7 @@ func TestShouldKeepSessionWhenUserCheckedRememberMeAndIsInactiveForTooLong(t *te
 	clock := mocks.TestingClock{}
 	clock.Set(time.Now())
 
-	mock.Ctx.Configuration.Session.Inactivity = 10
+	mock.Ctx.Configuration.Session.Inactivity = "10"
 
 	userSession := mock.Ctx.GetSession()
 	userSession.Username = "john"
@@ -520,7 +554,7 @@ func TestShouldKeepSessionWhenInactivityTimeoutHasNotBeenExceeded(t *testing.T) 
 	clock := mocks.TestingClock{}
 	clock.Set(time.Now())
 
-	mock.Ctx.Configuration.Session.Inactivity = 10
+	mock.Ctx.Configuration.Session.Inactivity = "10"
 
 	userSession := mock.Ctx.GetSession()
 	userSession.Username = "john"
@@ -594,7 +628,6 @@ func TestSchemeIsHTTPS(t *testing.T) {
 		GetURL("wss://mytest.example.com/abc/?query=abc")))
 	assert.True(t, isSchemeHTTPS(
 		GetURL("https://mytest.example.com/abc/?query=abc")))
-
 }
 
 func TestSchemeIsWSS(t *testing.T) {
@@ -612,5 +645,4 @@ func TestSchemeIsWSS(t *testing.T) {
 		GetURL("https://mytest.example.com/abc/?query=abc")))
 	assert.True(t, isSchemeWSS(
 		GetURL("wss://mytest.example.com/abc/?query=abc")))
-
 }

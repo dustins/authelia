@@ -4,14 +4,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/authelia/authelia/internal/configuration/schema"
 	"github.com/authelia/authelia/internal/mocks"
 	"github.com/authelia/authelia/internal/models"
 	"github.com/authelia/authelia/internal/regulation"
 	"github.com/authelia/authelia/internal/storage"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 )
 
 type RegulatorSuite struct {
@@ -29,8 +30,8 @@ func (s *RegulatorSuite) SetupTest() {
 
 	s.configuration = schema.RegulationConfiguration{
 		MaxRetries: 3,
-		BanTime:    180,
-		FindTime:   30,
+		BanTime:    "180",
+		FindTime:   "30",
 	}
 	s.clock.Set(time.Now())
 }
@@ -41,7 +42,7 @@ func (s *RegulatorSuite) TearDownTest() {
 
 func (s *RegulatorSuite) TestShouldNotThrowWhenUserIsLegitimate() {
 	attemptsInDB := []models.AuthenticationAttempt{
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: true,
 			Time:       s.clock.Now().Add(-4 * time.Minute),
@@ -62,17 +63,17 @@ func (s *RegulatorSuite) TestShouldNotThrowWhenUserIsLegitimate() {
 // with a certain amount of time larger than FindTime. Meaning the user should not be banned.
 func (s *RegulatorSuite) TestShouldNotThrowWhenFailedAuthenticationNotInFindTime() {
 	attemptsInDB := []models.AuthenticationAttempt{
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-1 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-90 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-180 * time.Second),
@@ -93,22 +94,22 @@ func (s *RegulatorSuite) TestShouldNotThrowWhenFailedAuthenticationNotInFindTime
 // seconds ago (meaning we are checking from now back to now-FindTime).
 func (s *RegulatorSuite) TestShouldBanUserIfLatestAttemptsAreWithinFinTime() {
 	attemptsInDB := []models.AuthenticationAttempt{
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-1 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-4 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-6 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-180 * time.Second),
@@ -131,17 +132,17 @@ func (s *RegulatorSuite) TestShouldBanUserIfLatestAttemptsAreWithinFinTime() {
 // banned right now.
 func (s *RegulatorSuite) TestShouldCheckUserIsStillBanned() {
 	attemptsInDB := []models.AuthenticationAttempt{
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-31 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-34 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-36 * time.Second),
@@ -160,12 +161,12 @@ func (s *RegulatorSuite) TestShouldCheckUserIsStillBanned() {
 
 func (s *RegulatorSuite) TestShouldCheckUserIsNotYetBanned() {
 	attemptsInDB := []models.AuthenticationAttempt{
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-34 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-36 * time.Second),
@@ -184,7 +185,7 @@ func (s *RegulatorSuite) TestShouldCheckUserIsNotYetBanned() {
 
 func (s *RegulatorSuite) TestShouldCheckUserWasAboutToBeBanned() {
 	attemptsInDB := []models.AuthenticationAttempt{
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-14 * time.Second),
@@ -192,12 +193,12 @@ func (s *RegulatorSuite) TestShouldCheckUserWasAboutToBeBanned() {
 		// more than 30 seconds elapsed between this auth and the preceding one.
 		// In that case we don't need to regulate the user even though the number
 		// of retrieved attempts is 3.
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-94 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-96 * time.Second),
@@ -216,24 +217,24 @@ func (s *RegulatorSuite) TestShouldCheckUserWasAboutToBeBanned() {
 
 func (s *RegulatorSuite) TestShouldCheckRegulationHasBeenResetOnSuccessfulAttempt() {
 	attemptsInDB := []models.AuthenticationAttempt{
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-90 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: true,
 			Time:       s.clock.Now().Add(-93 * time.Second),
 		},
 		// The user was almost banned but he did a successful attempt. Therefore, even if the next
 		// failure happens within FindTime, he should not be banned.
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-94 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-96 * time.Second),
@@ -258,17 +259,17 @@ func TestRunRegulatorSuite(t *testing.T) {
 // This test checks that the regulator is disabled when configuration is set to 0.
 func (s *RegulatorSuite) TestShouldHaveRegulatorDisabled() {
 	attemptsInDB := []models.AuthenticationAttempt{
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-31 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-34 * time.Second),
 		},
-		models.AuthenticationAttempt{
+		{
 			Username:   "john",
 			Successful: false,
 			Time:       s.clock.Now().Add(-36 * time.Second),
@@ -282,8 +283,8 @@ func (s *RegulatorSuite) TestShouldHaveRegulatorDisabled() {
 	// Check Disabled Functionality
 	configuration := schema.RegulationConfiguration{
 		MaxRetries: 0,
-		FindTime:   180,
-		BanTime:    180,
+		FindTime:   "180",
+		BanTime:    "180",
 	}
 
 	regulator := regulation.NewRegulator(&configuration, s.storageMock, &s.clock)
@@ -293,8 +294,8 @@ func (s *RegulatorSuite) TestShouldHaveRegulatorDisabled() {
 	// Check Enabled Functionality
 	configuration = schema.RegulationConfiguration{
 		MaxRetries: 1,
-		FindTime:   180,
-		BanTime:    180,
+		FindTime:   "180",
+		BanTime:    "180",
 	}
 
 	regulator = regulation.NewRegulator(&configuration, s.storageMock, &s.clock)

@@ -1,8 +1,10 @@
 package validator
 
-import "github.com/authelia/authelia/internal/configuration/schema"
+import (
+	"fmt"
 
-import "fmt"
+	"github.com/authelia/authelia/internal/configuration/schema"
+)
 
 // ValidateSession validates and update session configuration.
 func ValidateNotifier(configuration *schema.NotifierConfiguration, validator *schema.StructValidator) {
@@ -34,6 +36,10 @@ func ValidateNotifier(configuration *schema.NotifierConfiguration, validator *sc
 
 		if configuration.SMTP.Sender == "" {
 			validator.Push(fmt.Errorf("Sender of SMTP notifier must be provided"))
+		}
+
+		if configuration.SMTP.Subject == "" {
+			configuration.SMTP.Subject = schema.DefaultSMTPNotifierConfiguration.Subject
 		}
 		return
 	}

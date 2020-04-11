@@ -9,11 +9,11 @@ import (
 	"github.com/authelia/authelia/internal/mocks"
 	"github.com/authelia/authelia/internal/models"
 
-	"github.com/authelia/authelia/internal/authentication"
 	"github.com/golang/mock/gomock"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/authelia/authelia/internal/authentication"
 )
 
 type FirstFactorSuite struct {
@@ -28,13 +28,6 @@ func (s *FirstFactorSuite) SetupTest() {
 
 func (s *FirstFactorSuite) TearDownTest() {
 	s.mock.Close()
-}
-
-func (s *FirstFactorSuite) assertError500(err string) {
-	assert.Equal(s.T(), 500, s.mock.Ctx.Response.StatusCode())
-	assert.Equal(s.T(), []byte(InternalError), s.mock.Ctx.Response.Body())
-	assert.Equal(s.T(), err, s.mock.Hook.LastEntry().Message)
-	assert.Equal(s.T(), logrus.ErrorLevel, s.mock.Hook.LastEntry().Level)
 }
 
 func (s *FirstFactorSuite) TestShouldFailIfBodyIsNil() {
@@ -287,7 +280,7 @@ func (s *FirstFactorRedirectionSuite) SetupTest() {
 	s.mock.Ctx.Configuration.DefaultRedirectionURL = "https://default.local"
 	s.mock.Ctx.Configuration.AccessControl.DefaultPolicy = "bypass"
 	s.mock.Ctx.Configuration.AccessControl.Rules = []schema.ACLRule{
-		schema.ACLRule{
+		{
 			Domain: "default.local",
 			Policy: "one_factor",
 		},
@@ -383,11 +376,11 @@ func (s *FirstFactorRedirectionSuite) TestShouldReply200WhenUnsafeTargetURLProvi
 	s.mock.Ctx.Providers.Authorizer = authorization.NewAuthorizer(schema.AccessControlConfiguration{
 		DefaultPolicy: "one_factor",
 		Rules: []schema.ACLRule{
-			schema.ACLRule{
+			{
 				Domain: "test.example.com",
 				Policy: "one_factor",
 			},
-			schema.ACLRule{
+			{
 				Domain: "example.com",
 				Policy: "two_factor",
 			},

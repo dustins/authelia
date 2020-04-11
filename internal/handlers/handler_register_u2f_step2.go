@@ -4,8 +4,9 @@ import (
 	"crypto/elliptic"
 	"fmt"
 
-	"github.com/authelia/authelia/internal/middlewares"
 	"github.com/tstranex/u2f"
+
+	"github.com/authelia/authelia/internal/middlewares"
 )
 
 // SecondFactorU2FRegister handler validating the client has successfully validated the challenge
@@ -13,6 +14,10 @@ import (
 func SecondFactorU2FRegister(ctx *middlewares.AutheliaCtx) {
 	responseBody := u2f.RegisterResponse{}
 	err := ctx.ParseBody(&responseBody)
+
+	if err != nil {
+		ctx.Error(fmt.Errorf("Unable to parse response body: %v", err), unableToRegisterSecurityKeyMessage)
+	}
 
 	userSession := ctx.GetSession()
 

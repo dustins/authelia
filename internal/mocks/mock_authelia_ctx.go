@@ -6,19 +6,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/authelia/authelia/internal/regulation"
-	"github.com/authelia/authelia/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/authelia/authelia/internal/regulation"
+	"github.com/authelia/authelia/internal/storage"
+
+	"github.com/golang/mock/gomock"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/valyala/fasthttp"
 
 	"github.com/authelia/authelia/internal/authorization"
 	"github.com/authelia/authelia/internal/configuration/schema"
 	"github.com/authelia/authelia/internal/middlewares"
 	"github.com/authelia/authelia/internal/session"
-	"github.com/golang/mock/gomock"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
-	"github.com/valyala/fasthttp"
 )
 
 // MockAutheliaCtx a mock of AutheliaCtx
@@ -67,18 +69,19 @@ func NewMockAutheliaCtx(t *testing.T) *MockAutheliaCtx {
 	mockAuthelia.Clock.Set(datetime)
 
 	configuration := schema.Configuration{}
+	configuration.Session.RememberMeDuration = schema.DefaultSessionConfiguration.RememberMeDuration
 	configuration.Session.Name = "authelia_session"
 	configuration.AccessControl.DefaultPolicy = "deny"
-	configuration.AccessControl.Rules = []schema.ACLRule{schema.ACLRule{
+	configuration.AccessControl.Rules = []schema.ACLRule{{
 		Domain: "bypass.example.com",
 		Policy: "bypass",
-	}, schema.ACLRule{
+	}, {
 		Domain: "one-factor.example.com",
 		Policy: "one_factor",
-	}, schema.ACLRule{
+	}, {
 		Domain: "two-factor.example.com",
 		Policy: "two_factor",
-	}, schema.ACLRule{
+	}, {
 		Domain: "deny.example.com",
 		Policy: "deny",
 	}}

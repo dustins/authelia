@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/authelia/authelia/internal/middlewares"
-	"github.com/authelia/authelia/internal/mocks"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/authelia/authelia/internal/middlewares"
+	"github.com/authelia/authelia/internal/mocks"
 )
 
 type HandlerRegisterU2FStep1Suite struct {
@@ -43,13 +44,6 @@ func createToken(secret string, username string, action string, expiresAt time.T
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ss, _ := token.SignedString([]byte(secret))
 	return ss
-}
-
-func newFinishArgs() middlewares.IdentityVerificationFinishArgs {
-	return middlewares.IdentityVerificationFinishArgs{
-		ActionClaim:          U2FRegistrationAction,
-		IsTokenUserValidFunc: func(ctx *middlewares.AutheliaCtx, username string) bool { return true },
-	}
 }
 
 func (s *HandlerRegisterU2FStep1Suite) TestShouldRaiseWhenXForwardedProtoIsMissing() {

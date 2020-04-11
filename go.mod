@@ -11,7 +11,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/duosecurity/duo_api_golang v0.0.0-20190308151101-6c680f768e74
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
-	github.com/fasthttp/router v0.7.0
+	github.com/fasthttp/router v1.0.1
 	github.com/fasthttp/session v1.1.7
 	github.com/go-ldap/ldap/v3 v3.1.8
 	github.com/go-sql-driver/mysql v1.5.0
@@ -34,7 +34,7 @@ require (
 	github.com/tstranex/u2f v1.0.0
 	github.com/valyala/fasthttp v1.9.0
 	github.com/xdg/stringprep v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.3.1
+	go.mongodb.org/mongo-driver v1.3.2
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
 	gopkg.in/yaml.v2 v2.2.8

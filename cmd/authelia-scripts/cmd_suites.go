@@ -11,10 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/authelia/authelia/internal/suites"
-	"github.com/authelia/authelia/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/authelia/authelia/internal/suites"
+	"github.com/authelia/authelia/internal/utils"
 )
 
 // ErrNotAvailableSuite error raised when suite is not available.
@@ -105,9 +106,7 @@ var SuitesTestCmd = &cobra.Command{
 
 func listSuites() []string {
 	suiteNames := make([]string, 0)
-	for _, k := range suites.GlobalRegistry.Suites() {
-		suiteNames = append(suiteNames, k)
-	}
+	suiteNames = append(suiteNames, suites.GlobalRegistry.Suites()...)
 	sort.Strings(suiteNames)
 	return suiteNames
 }

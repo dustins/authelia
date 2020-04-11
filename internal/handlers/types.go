@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"github.com/authelia/authelia/internal/authentication"
 	"github.com/tstranex/u2f"
+
+	"github.com/authelia/authelia/internal/authentication"
 )
 
 // MethodList is the list of available methods.
@@ -46,12 +47,6 @@ type firstFactorRequestBody struct {
 	// Cannot require this field because of https://github.com/asaskevich/govalidator/pull/329
 	// TODO(c.michaud): add required validation once the above PR is merged.
 	KeepMeLoggedIn *bool `json:"keepMeLoggedIn"`
-}
-
-// FirstFactorMessageResponse represents the response sent by the first factor endpoint
-// when no redirection URL has been provided by the user.
-type firstFactorMessageResponse struct {
-	Message string `json:"message"`
 }
 
 // redirectResponse represent the response sent by the first factor endpoint

@@ -3,8 +3,9 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/authelia/authelia/internal/middlewares"
 	"github.com/tstranex/u2f"
+
+	"github.com/authelia/authelia/internal/middlewares"
 )
 
 var u2fConfig = &u2f.Config{
@@ -15,7 +16,6 @@ var u2fConfig = &u2f.Config{
 
 // SecondFactorU2FIdentityStart the handler for initiating the identity validation.
 var SecondFactorU2FIdentityStart = middlewares.IdentityVerificationStart(middlewares.IdentityVerificationStartArgs{
-	MailSubject:           "[Authelia] Register your key",
 	MailTitle:             "Register your key",
 	MailButtonContent:     "Register",
 	TargetEndpoint:        "/security-key/register",

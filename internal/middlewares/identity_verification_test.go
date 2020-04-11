@@ -5,20 +5,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/authelia/authelia/internal/middlewares"
-	"github.com/authelia/authelia/internal/mocks"
-	"github.com/authelia/authelia/internal/session"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/authelia/authelia/internal/middlewares"
+	"github.com/authelia/authelia/internal/mocks"
+	"github.com/authelia/authelia/internal/session"
 )
 
 func newArgs(retriever func(ctx *middlewares.AutheliaCtx) (*session.Identity, error)) middlewares.IdentityVerificationStartArgs {
 	return middlewares.IdentityVerificationStartArgs{
 		ActionClaim:           "Claim",
 		MailButtonContent:     "Register",
-		MailSubject:           "Subject",
 		MailTitle:             "Title",
 		TargetEndpoint:        "/target",
 		IdentityRetrieverFunc: retriever,
@@ -76,7 +76,7 @@ func TestShouldFailSendingAnEmail(t *testing.T) {
 		Return(nil)
 
 	mock.NotifierMock.EXPECT().
-		Send(gomock.Eq("john@example.com"), gomock.Eq("Subject"), gomock.Any()).
+		Send(gomock.Eq("john@example.com"), gomock.Eq("Title"), gomock.Any()).
 		Return(fmt.Errorf("no notif"))
 
 	args := newArgs(defaultRetriever)
@@ -135,7 +135,7 @@ func TestShouldSucceedIdentityVerificationStartProcess(t *testing.T) {
 		Return(nil)
 
 	mock.NotifierMock.EXPECT().
-		Send(gomock.Eq("john@example.com"), gomock.Eq("Subject"), gomock.Any()).
+		Send(gomock.Eq("john@example.com"), gomock.Eq("Title"), gomock.Any()).
 		Return(nil)
 
 	args := newArgs(defaultRetriever)

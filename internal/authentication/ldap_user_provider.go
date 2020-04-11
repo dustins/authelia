@@ -6,9 +6,10 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/go-ldap/ldap/v3"
+
 	"github.com/authelia/authelia/internal/configuration/schema"
 	"github.com/authelia/authelia/internal/logging"
-	"github.com/go-ldap/ldap/v3"
 )
 
 // LDAPUserProvider is a provider using a LDAP or AD as a user database.
@@ -177,7 +178,7 @@ func (p *LDAPUserProvider) getUserProfile(conn LDAPConnection, inputUsername str
 	return &userProfile, nil
 }
 
-func (p *LDAPUserProvider) resolveGroupsFilter(inputUsername string, profile *ldapUserProfile) (string, error) {
+func (p *LDAPUserProvider) resolveGroupsFilter(inputUsername string, profile *ldapUserProfile) (string, error) { //nolint:unparam
 	inputUsername = p.ldapEscape(inputUsername)
 
 	// We temporarily keep placeholder {0} for backward compatibility

@@ -3,11 +3,12 @@ package authentication
 import (
 	"testing"
 
-	"github.com/authelia/authelia/internal/configuration/schema"
 	"github.com/go-ldap/ldap/v3"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/authelia/authelia/internal/configuration/schema"
 )
 
 func TestShouldCreateRawConnectionWhenSchemeIsLDAP(t *testing.T) {
@@ -179,7 +180,7 @@ func TestShouldCombineUsernameFilterAndUsersFilter(t *testing.T) {
 func createSearchResultWithAttributes(attributes ...*ldap.EntryAttribute) *ldap.SearchResult {
 	return &ldap.SearchResult{
 		Entries: []*ldap.Entry{
-			&ldap.Entry{Attributes: attributes},
+			{Attributes: attributes},
 		},
 	}
 }
@@ -226,14 +227,14 @@ func TestShouldNotCrashWhenGroupsAreNotRetrievedFromLDAP(t *testing.T) {
 		Search(gomock.Any()).
 		Return(&ldap.SearchResult{
 			Entries: []*ldap.Entry{
-				&ldap.Entry{
+				{
 					DN: "uid=test,dc=example,dc=com",
 					Attributes: []*ldap.EntryAttribute{
-						&ldap.EntryAttribute{
+						{
 							Name:   "mail",
 							Values: []string{"test@example.com"},
 						},
-						&ldap.EntryAttribute{
+						{
 							Name:   "uid",
 							Values: []string{"john"},
 						},
@@ -287,10 +288,10 @@ func TestShouldNotCrashWhenEmailsAreNotRetrievedFromLDAP(t *testing.T) {
 		Search(gomock.Any()).
 		Return(&ldap.SearchResult{
 			Entries: []*ldap.Entry{
-				&ldap.Entry{
+				{
 					DN: "uid=test,dc=example,dc=com",
 					Attributes: []*ldap.EntryAttribute{
-						&ldap.EntryAttribute{
+						{
 							Name:   "uid",
 							Values: []string{"john"},
 						},
@@ -345,14 +346,14 @@ func TestShouldReturnUsernameFromLDAP(t *testing.T) {
 		Search(gomock.Any()).
 		Return(&ldap.SearchResult{
 			Entries: []*ldap.Entry{
-				&ldap.Entry{
+				{
 					DN: "uid=test,dc=example,dc=com",
 					Attributes: []*ldap.EntryAttribute{
-						&ldap.EntryAttribute{
+						{
 							Name:   "mail",
 							Values: []string{"test@example.com"},
 						},
-						&ldap.EntryAttribute{
+						{
 							Name:   "uid",
 							Values: []string{"John"},
 						},
