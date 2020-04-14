@@ -105,8 +105,8 @@ func (s *AuthorizerSuite) TestShouldCheckMultiDomainRule() {
 	tester := NewAuthorizerBuilder().
 		WithDefaultPolicy("deny").
 		WithRule(schema.ACLRule{
-			Domain: "*.example.com",
-			Policy: "bypass",
+			Domains: []string{"*.example.com"},
+			Policy:  "bypass",
 		}).
 		Build()
 
@@ -122,16 +122,16 @@ func (s *AuthorizerSuite) TestShouldCheckFactorsPolicy() {
 	tester := NewAuthorizerBuilder().
 		WithDefaultPolicy("deny").
 		WithRule(schema.ACLRule{
-			Domain: "single.example.com",
-			Policy: "one_factor",
+			Domains: []string{"single.example.com"},
+			Policy:  "one_factor",
 		}).
 		WithRule(schema.ACLRule{
-			Domain: "protected.example.com",
-			Policy: "two_factor",
+			Domains: []string{"protected.example.com"},
+			Policy:  "two_factor",
 		}).
 		WithRule(schema.ACLRule{
-			Domain: "public.example.com",
-			Policy: "bypass",
+			Domains: []string{"public.example.com"},
+			Policy:  "bypass",
 		}).
 		Build()
 
@@ -145,17 +145,17 @@ func (s *AuthorizerSuite) TestShouldCheckRulePrecedence() {
 	tester := NewAuthorizerBuilder().
 		WithDefaultPolicy("deny").
 		WithRule(schema.ACLRule{
-			Domain:  "protected.example.com",
-			Policy:  "bypass",
-			Subject: "user:john",
+			Domains:  []string{"protected.example.com"},
+			Policy:   "bypass",
+			Subjects: []string{"user:john"},
 		}).
 		WithRule(schema.ACLRule{
-			Domain: "protected.example.com",
-			Policy: "one_factor",
+			Domains: []string{"protected.example.com"},
+			Policy:  "one_factor",
 		}).
 		WithRule(schema.ACLRule{
-			Domain: "*.example.com",
-			Policy: "two_factor",
+			Domains: []string{"*.example.com"},
+			Policy:  "two_factor",
 		}).
 		Build()
 
@@ -168,9 +168,9 @@ func (s *AuthorizerSuite) TestShouldCheckUserMatching() {
 	tester := NewAuthorizerBuilder().
 		WithDefaultPolicy("deny").
 		WithRule(schema.ACLRule{
-			Domain:  "protected.example.com",
-			Policy:  "bypass",
-			Subject: "user:john",
+			Domains:  []string{"protected.example.com"},
+			Policy:   "bypass",
+			Subjects: []string{"user:john"},
 		}).
 		Build()
 
@@ -182,9 +182,9 @@ func (s *AuthorizerSuite) TestShouldCheckGroupMatching() {
 	tester := NewAuthorizerBuilder().
 		WithDefaultPolicy("deny").
 		WithRule(schema.ACLRule{
-			Domain:  "protected.example.com",
-			Policy:  "bypass",
-			Subject: "group:admins",
+			Domains:  []string{"protected.example.com"},
+			Policy:   "bypass",
+			Subjects: []string{"group:admins"},
 		}).
 		Build()
 
@@ -196,17 +196,17 @@ func (s *AuthorizerSuite) TestShouldCheckIPMatching() {
 	tester := NewAuthorizerBuilder().
 		WithDefaultPolicy("deny").
 		WithRule(schema.ACLRule{
-			Domain:   "protected.example.com",
+			Domains:  []string{"protected.example.com"},
 			Policy:   "bypass",
 			Networks: []string{"192.168.1.8", "10.0.0.8"},
 		}).
 		WithRule(schema.ACLRule{
-			Domain:   "protected.example.com",
+			Domains:  []string{"protected.example.com"},
 			Policy:   "one_factor",
 			Networks: []string{"10.0.0.7"},
 		}).
 		WithRule(schema.ACLRule{
-			Domain:   "net.example.com",
+			Domains:  []string{"net.example.com"},
 			Policy:   "two_factor",
 			Networks: []string{"10.0.0.0/8"},
 		}).
@@ -225,12 +225,12 @@ func (s *AuthorizerSuite) TestShouldCheckResourceMatching() {
 	tester := NewAuthorizerBuilder().
 		WithDefaultPolicy("deny").
 		WithRule(schema.ACLRule{
-			Domain:    "resource.example.com",
+			Domains:   []string{"resource.example.com"},
 			Policy:    "bypass",
 			Resources: []string{"^/bypass/[a-z]+$", "^/$", "embedded"},
 		}).
 		WithRule(schema.ACLRule{
-			Domain:    "resource.example.com",
+			Domains:   []string{"resource.example.com"},
 			Policy:    "one_factor",
 			Resources: []string{"^/one_factor/[a-z]+$"},
 		}).
