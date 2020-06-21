@@ -7,6 +7,7 @@ npm-debug.log*
 
 # Coverage reports
 coverage/
+coverage.txt
 
 .vscode/
 
@@ -42,3 +43,7 @@ Configuration.schema.json
 .authelia-interrupt
 
 qemu-*-static
+
+public_html.gen.go
+
+__debug_bin

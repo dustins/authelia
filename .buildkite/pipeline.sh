@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -u
 
 DIVERGED=$(git merge-base --fork-point origin/master > /dev/null; echo $?)
 
-if [[ $DIVERGED -eq 0 ]]; then
+if [[ $DIVERGED == 0 ]]; then
   if [[ $BUILDKITE_TAG == "" ]]; then
     if [[ $BUILDKITE_BRANCH == "master" ]]; then
       CI_BYPASS=$(git diff --name-only HEAD~1 | sed -rn '/^(BREAKING.md|CONTRIBUTING.md|README.md|docs\/.*)/!{q1}' && echo true || echo false)
@@ -26,9 +26,18 @@ env:
   CI_BYPASS: ${CI_BYPASS}
 
 steps:
+  - label: ":service_dog: Linting"
+    command: "reviewdog -reporter=github-check"
+    retry:
+      automatic: true
+    if: build.branch !~ /^(v[0-9]+\.[0-9]+\.[0-9]+)$\$/
+
   - label: ":hammer_and_wrench: Unit Test"
     command: "authelia-scripts --log-level debug ci"
-    if: build.branch !~ /^(master)|(v[0-9]+\.[0-9]+\.[0-9]+)$\$/ && build.env("CI_BYPASS") != "true"
+    artifact_paths:
+      - "authelia-public_html.tar.gz"
+      - "authelia-public_html.tar.gz.sha256"
+    if: build.env("CI_BYPASS") != "true"
 
   - wait:
     if: build.env("CI_BYPASS") != "true"
@@ -44,6 +53,6 @@ steps:
   - label: ":chrome: Integration Tests"
     command: ".buildkite/steps/e2etests.sh | buildkite-agent pipeline upload"
     depends_on:
-      - "build-docker-linux-amd64"
+      - "build-docker-linux-coverage"
     if: build.branch !~ /^(master)|(v[0-9]+\.[0-9]+\.[0-9]+)$\$/ && build.env("CI_BYPASS") != "true"
 EOF

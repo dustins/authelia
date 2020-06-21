@@ -47,7 +47,7 @@ func (s *RegulationScenario) SetupTest() {
 }
 
 func (s *RegulationScenario) TestShouldBanUserAfterTooManyAttempt() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
 	s.doVisitLoginPage(ctx, s.T(), "")
@@ -55,14 +55,14 @@ func (s *RegulationScenario) TestShouldBanUserAfterTooManyAttempt() {
 	s.verifyNotificationDisplayed(ctx, s.T(), "Incorrect username or password.")
 
 	for i := 0; i < 3; i++ {
-		s.WaitElementLocatedByID(ctx, s.T(), "password-textfield").SendKeys("bad-password")
-		s.WaitElementLocatedByID(ctx, s.T(), "sign-in-button").Click()
+		s.WaitElementLocatedByID(ctx, s.T(), "password-textfield").SendKeys("bad-password") //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
+		s.WaitElementLocatedByID(ctx, s.T(), "sign-in-button").Click()                      //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 		time.Sleep(1 * time.Second)
 	}
 
 	// Enter the correct password and test the regulation lock out
-	s.WaitElementLocatedByID(ctx, s.T(), "password-textfield").SendKeys("password")
-	s.WaitElementLocatedByID(ctx, s.T(), "sign-in-button").Click()
+	s.WaitElementLocatedByID(ctx, s.T(), "password-textfield").SendKeys("password") //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
+	s.WaitElementLocatedByID(ctx, s.T(), "sign-in-button").Click()                  //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 	s.verifyNotificationDisplayed(ctx, s.T(), "Incorrect username or password.")
 
 	time.Sleep(1 * time.Second)
@@ -70,8 +70,8 @@ func (s *RegulationScenario) TestShouldBanUserAfterTooManyAttempt() {
 	time.Sleep(9 * time.Second)
 
 	// Enter the correct password and test a successful login
-	s.WaitElementLocatedByID(ctx, s.T(), "password-textfield").SendKeys("password")
-	s.WaitElementLocatedByID(ctx, s.T(), "sign-in-button").Click()
+	s.WaitElementLocatedByID(ctx, s.T(), "password-textfield").SendKeys("password") //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
+	s.WaitElementLocatedByID(ctx, s.T(), "sign-in-button").Click()                  //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 	s.verifyIsSecondFactorPage(ctx, s.T())
 }
 

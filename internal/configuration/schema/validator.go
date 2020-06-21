@@ -7,22 +7,23 @@ import (
 	"github.com/Workiva/go-datastructures/queue"
 )
 
-// ErrorContainer represents a container where we can add errors and retrieve them
+// ErrorContainer represents a container where we can add errors and retrieve them.
 type ErrorContainer interface {
 	Push(err error)
 	HasErrors() bool
 	Errors() []error
 }
 
-// Validator represents the validator interface
+// Validator represents the validator interface.
 type Validator struct {
 	errors map[string][]error
 }
 
-// NewValidator create a validator
+// NewValidator create a validator.
 func NewValidator() *Validator {
 	validator := new(Validator)
 	validator.errors = make(map[string][]error)
+
 	return validator
 }
 
@@ -39,7 +40,8 @@ func (v *Validator) validateOne(item QueueItem, q *queue.Queue) error { //nolint
 		}
 
 		elem := item.value.Elem()
-		q.Put(QueueItem{
+
+		q.Put(QueueItem{ //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 			value: elem,
 			path:  item.path,
 		})
@@ -58,58 +60,64 @@ func (v *Validator) validateOne(item QueueItem, q *queue.Queue) error { //nolint
 			field := item.value.Type().Field(i)
 			value := item.value.Field(i)
 
-			q.Put(QueueItem{
+			q.Put(QueueItem{ //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 				value: value,
 				path:  item.path + "." + field.Name,
 			})
 		}
 	}
+
 	return nil
 }
 
-// Validate validate a struct
+// Validate validate a struct.
 func (v *Validator) Validate(s interface{}) error {
 	q := queue.New(40)
-	q.Put(QueueItem{value: reflect.ValueOf(s), path: "root"})
+	q.Put(QueueItem{value: reflect.ValueOf(s), path: "root"}) //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 
 	for !q.Empty() {
 		val, err := q.Get(1)
 		if err != nil {
 			return err
 		}
+
 		item, ok := val[0].(QueueItem)
 		if !ok {
 			return fmt.Errorf("Cannot convert item into QueueItem")
 		}
-		v.validateOne(item, q)
+
+		v.validateOne(item, q) //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 	}
+
 	return nil
 }
 
-// PrintErrors display the errors thrown during validation
+// PrintErrors display the errors thrown during validation.
 func (v *Validator) PrintErrors() {
 	for path, errs := range v.errors {
 		fmt.Printf("Errors at %s:\n", path)
+
 		for _, err := range errs {
 			fmt.Printf("--> %s\n", err)
 		}
 	}
 }
 
-// Errors return the errors thrown during validation
+// Errors return the errors thrown during validation.
 func (v *Validator) Errors() map[string][]error {
 	return v.errors
 }
 
-// StructValidator is a validator for structs
+// StructValidator is a validator for structs.
 type StructValidator struct {
 	errors []error
 }
 
-// NewStructValidator is a constructor of struct validator
+// NewStructValidator is a constructor of struct validator.
 func NewStructValidator() *StructValidator {
 	val := new(StructValidator)
 	val.errors = make([]error, 0)
+
 	return val
 }
 
@@ -128,7 +136,7 @@ func (v *StructValidator) Errors() []error {
 	return v.errors
 }
 
-// Clear errors
+// Clear errors.
 func (v *StructValidator) Clear() {
 	v.errors = []error{}
 }

@@ -14,7 +14,7 @@ func newDefaultConfig() schema.Configuration {
 	config.Host = "127.0.0.1"
 	config.Port = 9090
 	config.LogLevel = "info"
-	config.JWTSecret = "a_secret"
+	config.JWTSecret = testJWTSecret
 	config.AuthenticationBackend.File = new(schema.FileAuthenticationBackendConfiguration)
 	config.AuthenticationBackend.File.Path = "/a/path"
 	config.Session = schema.SessionConfiguration{
@@ -30,6 +30,7 @@ func newDefaultConfig() schema.Configuration {
 			Filename: "/tmp/file",
 		},
 	}
+
 	return config
 }
 
@@ -37,7 +38,7 @@ func TestShouldNotUpdateConfig(t *testing.T) {
 	validator := schema.NewStructValidator()
 	config := newDefaultConfig()
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 
 	require.Len(t, validator.Errors(), 0)
 	assert.Equal(t, 9090, config.Port)
@@ -49,7 +50,7 @@ func TestShouldValidateAndUpdatePort(t *testing.T) {
 	config := newDefaultConfig()
 	config.Port = 0
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 
 	require.Len(t, validator.Errors(), 0)
 	assert.Equal(t, 8080, config.Port)
@@ -60,7 +61,7 @@ func TestShouldValidateAndUpdateHost(t *testing.T) {
 	config := newDefaultConfig()
 	config.Host = ""
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 
 	require.Len(t, validator.Errors(), 0)
 	assert.Equal(t, "0.0.0.0", config.Host)
@@ -71,7 +72,7 @@ func TestShouldValidateAndUpdateLogsLevel(t *testing.T) {
 	config := newDefaultConfig()
 	config.LogLevel = ""
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 
 	require.Len(t, validator.Errors(), 0)
 	assert.Equal(t, "info", config.LogLevel)
@@ -81,12 +82,12 @@ func TestShouldEnsureNotifierConfigIsProvided(t *testing.T) {
 	validator := schema.NewStructValidator()
 	config := newDefaultConfig()
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 	require.Len(t, validator.Errors(), 0)
 
 	config.Notifier = nil
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 	require.Len(t, validator.Errors(), 1)
 	assert.EqualError(t, validator.Errors()[0], "A notifier configuration must be provided")
 }
@@ -95,7 +96,7 @@ func TestShouldAddDefaultAccessControl(t *testing.T) {
 	validator := schema.NewStructValidator()
 	config := newDefaultConfig()
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 	require.Len(t, validator.Errors(), 0)
 	assert.NotNil(t, config.AccessControl)
 	assert.Equal(t, "deny", config.AccessControl.DefaultPolicy)
@@ -104,9 +105,9 @@ func TestShouldAddDefaultAccessControl(t *testing.T) {
 func TestShouldRaiseErrorWhenTLSCertWithoutKeyIsProvided(t *testing.T) {
 	validator := schema.NewStructValidator()
 	config := newDefaultConfig()
-	config.TLSCert = "/tmp/cert.pem"
+	config.TLSCert = testTLSCert
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 	require.Len(t, validator.Errors(), 1)
 	assert.EqualError(t, validator.Errors()[0], "No TLS key provided, please check the \"tls_key\" which has been configured")
 }
@@ -114,9 +115,9 @@ func TestShouldRaiseErrorWhenTLSCertWithoutKeyIsProvided(t *testing.T) {
 func TestShouldRaiseErrorWhenTLSKeyWithoutCertIsProvided(t *testing.T) {
 	validator := schema.NewStructValidator()
 	config := newDefaultConfig()
-	config.TLSKey = "/tmp/key.pem"
+	config.TLSKey = testTLSKey
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 	require.Len(t, validator.Errors(), 1)
 	assert.EqualError(t, validator.Errors()[0], "No TLS certificate provided, please check the \"tls_cert\" which has been configured")
 }
@@ -124,10 +125,10 @@ func TestShouldRaiseErrorWhenTLSKeyWithoutCertIsProvided(t *testing.T) {
 func TestShouldNotRaiseErrorWhenBothTLSCertificateAndKeyAreProvided(t *testing.T) {
 	validator := schema.NewStructValidator()
 	config := newDefaultConfig()
-	config.TLSCert = "/tmp/cert.pem"
-	config.TLSKey = "/tmp/key.pem"
+	config.TLSCert = testTLSCert
+	config.TLSKey = testTLSKey
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 	require.Len(t, validator.Errors(), 0)
 }
 
@@ -136,7 +137,7 @@ func TestShouldRaiseErrorWithUndefinedJWTSecretKey(t *testing.T) {
 	config := newDefaultConfig()
 	config.JWTSecret = ""
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 	require.Len(t, validator.Errors(), 1)
 	assert.EqualError(t, validator.Errors()[0], "Provide a JWT secret using \"jwt_secret\" key")
 }
@@ -146,7 +147,7 @@ func TestShouldRaiseErrorWithBadDefaultRedirectionURL(t *testing.T) {
 	config := newDefaultConfig()
 	config.DefaultRedirectionURL = "abc"
 
-	Validate(&config, validator)
+	ValidateConfiguration(&config, validator)
 	require.Len(t, validator.Errors(), 1)
 	assert.EqualError(t, validator.Errors()[0], "Unable to parse default redirection url")
 }

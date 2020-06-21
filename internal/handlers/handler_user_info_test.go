@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/authelia/authelia/internal/mocks"
-	"github.com/authelia/authelia/internal/storage"
-
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/authelia/authelia/internal/mocks"
+	"github.com/authelia/authelia/internal/storage"
 )
 
 type FetchSuite struct {
@@ -22,16 +22,16 @@ func (s *FetchSuite) SetupTest() {
 	s.mock = mocks.NewMockAutheliaCtx(s.T())
 	// Set the initial user session.
 	userSession := s.mock.Ctx.GetSession()
-	userSession.Username = "john"
+	userSession.Username = testUsername
 	userSession.AuthenticationLevel = 1
-	s.mock.Ctx.SaveSession(userSession)
+	s.mock.Ctx.SaveSession(userSession) //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 }
 
 func (s *FetchSuite) TearDownTest() {
 	s.mock.Close()
 }
 
-func setPreferencesExpectations(preferences UserPreferences, provider *storage.MockProvider) {
+func setPreferencesExpectations(preferences UserInfo, provider *storage.MockProvider) {
 	provider.
 		EXPECT().
 		LoadPreferred2FAMethod(gomock.Eq("john")).
@@ -65,7 +65,7 @@ func setPreferencesExpectations(preferences UserPreferences, provider *storage.M
 }
 
 func TestMethodSetToU2F(t *testing.T) {
-	table := []UserPreferences{
+	table := []UserInfo{
 		{
 			Method: "totp",
 		},
@@ -90,14 +90,14 @@ func TestMethodSetToU2F(t *testing.T) {
 		mock := mocks.NewMockAutheliaCtx(t)
 		// Set the initial user session.
 		userSession := mock.Ctx.GetSession()
-		userSession.Username = "john"
+		userSession.Username = testUsername
 		userSession.AuthenticationLevel = 1
-		mock.Ctx.SaveSession(userSession)
+		mock.Ctx.SaveSession(userSession) //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 
 		setPreferencesExpectations(expectedPreferences, mock.StorageProviderMock)
 		UserInfoGet(mock.Ctx)
 
-		actualPreferences := UserPreferences{}
+		actualPreferences := UserInfo{}
 		mock.GetResponseData(t, &actualPreferences)
 
 		t.Run("expected method", func(t *testing.T) {
@@ -132,7 +132,7 @@ func (s *FetchSuite) TestShouldGetDefaultPreferenceIfNotInDB() {
 		Return("", storage.ErrNoTOTPSecret)
 
 	UserInfoGet(s.mock.Ctx)
-	s.mock.Assert200OK(s.T(), UserPreferences{Method: "totp"})
+	s.mock.Assert200OK(s.T(), UserInfo{Method: "totp"})
 }
 
 func (s *FetchSuite) TestShouldReturnError500WhenStorageFailsToLoad() {
@@ -168,9 +168,9 @@ func (s *SaveSuite) SetupTest() {
 	s.mock = mocks.NewMockAutheliaCtx(s.T())
 	// Set the initial user session.
 	userSession := s.mock.Ctx.GetSession()
-	userSession.Username = "john"
+	userSession.Username = testUsername
 	userSession.AuthenticationLevel = 1
-	s.mock.Ctx.SaveSession(userSession)
+	s.mock.Ctx.SaveSession(userSession) //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 }
 
 func (s *SaveSuite) TearDownTest() {

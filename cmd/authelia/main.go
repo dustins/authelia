@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -27,17 +26,14 @@ var configPathFlag string
 
 //nolint:gocyclo // TODO: Consider refactoring/simplifying, time permitting
 func startServer() {
-	if configPathFlag == "" {
-		log.Fatal(errors.New("No config file path provided"))
-	}
-
 	config, errs := configuration.Read(configPathFlag)
 
 	if len(errs) > 0 {
 		for _, err := range errs {
 			logging.Logger().Error(err)
 		}
-		panic(errors.New("Some errors have been reported"))
+
+		os.Exit(1)
 	}
 
 	if err := logging.InitializeLogger(config.LogFilePath); err != nil {
@@ -62,32 +58,44 @@ func startServer() {
 
 	var userProvider authentication.UserProvider
 
-	if config.AuthenticationBackend.File != nil {
+	switch {
+	case config.AuthenticationBackend.File != nil:
 		userProvider = authentication.NewFileUserProvider(config.AuthenticationBackend.File)
-	} else if config.AuthenticationBackend.Ldap != nil {
+	case config.AuthenticationBackend.Ldap != nil:
 		userProvider = authentication.NewLDAPUserProvider(*config.AuthenticationBackend.Ldap)
-	} else {
+	default:
 		log.Fatalf("Unrecognized authentication backend")
 	}
 
 	var storageProvider storage.Provider
-	if config.Storage.PostgreSQL != nil {
+
+	switch {
+	case config.Storage.PostgreSQL != nil:
 		storageProvider = storage.NewPostgreSQLProvider(*config.Storage.PostgreSQL)
-	} else if config.Storage.MySQL != nil {
+	case config.Storage.MySQL != nil:
 		storageProvider = storage.NewMySQLProvider(*config.Storage.MySQL)
-	} else if config.Storage.Local != nil {
+	case config.Storage.Local != nil:
 		storageProvider = storage.NewSQLiteProvider(config.Storage.Local.Path)
-	} else {
+	default:
 		log.Fatalf("Unrecognized storage backend")
 	}
 
 	var notifier notification.Notifier
-	if config.Notifier.SMTP != nil {
+
+	switch {
+	case config.Notifier.SMTP != nil:
 		notifier = notification.NewSMTPNotifier(*config.Notifier.SMTP)
-	} else if config.Notifier.FileSystem != nil {
+	case config.Notifier.FileSystem != nil:
 		notifier = notification.NewFileNotifier(*config.Notifier.FileSystem)
-	} else {
+	default:
 		log.Fatalf("Unrecognized notifier")
+	}
+
+	if !config.Notifier.DisableStartupCheck {
+		_, err := notifier.StartupCheck()
+		if err != nil {
+			log.Fatalf("Error during notifier startup check: %s", err)
+		}
 	}
 
 	clock := utils.RealClock{}
@@ -120,12 +128,13 @@ func main() {
 		Use:   "version",
 		Short: "Show the version of Authelia",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Authelia version %s, build %s", BuildTag, BuildCommit)
+			fmt.Printf("Authelia version %s, build %s\n", BuildTag, BuildCommit)
 		},
 	}
 
-	rootCmd.AddCommand(versionCmd, commands.MigrateCmd, commands.HashPasswordCmd)
-	rootCmd.AddCommand(commands.CertificatesCmd)
+	rootCmd.AddCommand(versionCmd, commands.HashPasswordCmd,
+		commands.ValidateConfigCmd, commands.CertificatesCmd)
+
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}

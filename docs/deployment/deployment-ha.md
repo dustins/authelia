@@ -40,11 +40,11 @@ pay attention to the permissions of the configuration file. See
 
     # Build it if not done already
     $ authelia-scripts build
-    $ PUBLIC_DIR=./dist/public_html authelia --config /path/to/your/configuration.yml
+    $ authelia --config /path/to/your/configuration.yml
 
 ### Deploy With Docker
 
-    $ docker run -v /path/to/your/configuration.yml:/etc/authelia/configuration.yml -e TZ=Europe/Paris authelia/authelia
+    $ docker run -v /path/to/your/configuration.yml:/config/configuration.yml -e TZ=Europe/Paris authelia/authelia
 
 ## FAQ
 

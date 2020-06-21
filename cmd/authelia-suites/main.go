@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
@@ -15,7 +17,7 @@ import (
 
 var tmpDirectory = "/tmp/authelia/suites/"
 
-// runningSuiteFile name of the file containing the currently running suite
+// runningSuiteFile name of the file containing the currently running suite.
 var runningSuiteFile = ".suite"
 
 func init() {
@@ -55,13 +57,14 @@ func main() {
 	rootCmd.AddCommand(setupTimeoutCmd)
 	rootCmd.AddCommand(errorCmd)
 	rootCmd.AddCommand(stopCmd)
+
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func createRunningSuiteFile(suite string) error {
-	return ioutil.WriteFile(runningSuiteFile, []byte(suite), 0644)
+	return ioutil.WriteFile(runningSuiteFile, []byte(suite), 0600)
 }
 
 func removeRunningSuiteFile() error {
@@ -84,6 +87,27 @@ func setupSuite(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	suiteEnv := suiteResourcePath + "/.env"
+
+	_, err = os.Stat(suiteEnv)
+	if err == nil {
+		file, err := os.Open(suiteEnv)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		env := bufio.NewScanner(file)
+
+		for env.Scan() {
+			v := strings.Split(env.Text(), "=")
+
+			err := os.Setenv(v[0], v[1])
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
 
 	suiteTmpDirectory := tmpDirectory + suiteName
@@ -125,6 +149,7 @@ func setupTimeoutSuite(cmd *cobra.Command, args []string) {
 	if s.OnSetupTimeout == nil {
 		return
 	}
+
 	if err := s.OnSetupTimeout(); err != nil {
 		log.Fatal(err)
 	}
@@ -137,6 +162,7 @@ func runErrorCallback(cmd *cobra.Command, args []string) {
 	if s.OnError == nil {
 		return
 	}
+
 	if err := s.OnError(); err != nil {
 		log.Fatal(err)
 	}

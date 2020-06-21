@@ -1,7 +1,10 @@
 package session
 
 import (
-	"github.com/fasthttp/session"
+	"time"
+
+	"github.com/fasthttp/session/v2"
+	"github.com/fasthttp/session/v2/providers/redis"
 	"github.com/tstranex/u2f"
 
 	"github.com/authelia/authelia/internal/authentication"
@@ -9,12 +12,12 @@ import (
 
 // ProviderConfig is the configuration used to create the session provider.
 type ProviderConfig struct {
-	config         *session.Config
-	providerName   string
-	providerConfig session.ProviderConfig
+	config       session.Config
+	redisConfig  *redis.Config
+	providerName string
 }
 
-// U2FRegistration is a serializable version of a U2F registration
+// U2FRegistration is a serializable version of a U2F registration.
 type U2FRegistration struct {
 	KeyHandle []byte
 	PublicKey []byte
@@ -22,7 +25,8 @@ type U2FRegistration struct {
 
 // UserSession is the structure representing the session of a user.
 type UserSession struct {
-	Username string
+	Username    string
+	DisplayName string
 	// TODO(c.michaud): move groups out of the session.
 	Groups []string
 	Emails []string
@@ -41,6 +45,8 @@ type UserSession struct {
 	// This boolean is set to true after identity verification and checked
 	// while doing the query actually updating the password.
 	PasswordResetUsername *string
+
+	RefreshTTL time.Time
 }
 
 // Identity identity of the user who is being verified.

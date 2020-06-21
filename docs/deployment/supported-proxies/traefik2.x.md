@@ -33,7 +33,7 @@ networks:
 services:
 
   traefik:
-    image: traefik:v2.1.2
+    image: traefik:v2.2
     container_name: traefik
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -54,6 +54,8 @@ services:
       - '--providers.docker.exposedByDefault=false'
       - '--entrypoints.http=true'
       - '--entrypoints.http.address=:80'
+      - '--entrypoints.http.http.redirections.entrypoint.to=https'
+      - '--entrypoints.http.http.redirections.entrypoint.scheme=https'
       - '--entrypoints.https=true'
       - '--entrypoints.https.address=:443'
       - '--log=true'
@@ -64,8 +66,7 @@ services:
     image: authelia/authelia
     container_name: authelia
     volumes:
-      - /path/to/authelia:/var/lib/authelia
-      - /path/to/authelia/config.yml:/etc/authelia/configuration.yml:ro
+      - /path/to/authelia:/config
     networks:
       - net
     labels:
@@ -105,4 +106,21 @@ services:
       - TZ=Australia/Melbourne
 ```
 
+## FAQ
+
+### Middleware authelia@docker not found
+
+If Traefik and Authelia are defined in different docker compose stacks you may experience
+an issue where Traefik complains that: `middleware authelia@docker not found`.
+
+This can be avoided a couple different ways:
+1. Ensure Authelia container is up before Traefik is started:
+    - Utilise the [`depends_on` option](https://docs.docker.com/compose/compose-file/#depends_on)
+2. Define the Authelia middleware on your Traefik container
+```yaml
+- 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://login.example.com/'
+- 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
+- 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups'
+```
+    
 [Traefik 2.x]: https://docs.traefik.io/

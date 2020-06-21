@@ -2,7 +2,7 @@
 layout: default
 title: Miscellaneous
 parent: Configuration
-nav_order: 5
+nav_order: 3
 ---
 
 # Miscellaneous
@@ -28,8 +28,8 @@ Authelia can use TLS. Provide the certificate and the key with the
 following configuration options:
 
 ```yaml
-tls_key: /var/lib/authelia/ssl/key.pem
-tls_cert: /var/lib/authelia/ssl/cert.pem
+tls_key: /config/ssl/key.pem
+tls_cert: /config/ssl/cert.pem
 ```
 
 ## Log
@@ -55,7 +55,7 @@ Logs can be stored in a file when file path is provided. Otherwise logs
 are written to standard output.
 
 ```yaml
-log_file_path: /var/log/authelia.log
+log_file_path: /config/authelia.log
 ```
 
 
@@ -64,7 +64,7 @@ log_file_path: /var/log/authelia.log
 `optional: false`
 
 Defines the secret used to craft JWT tokens leveraged by the identity
-verification process
+verification process. This can also be defined using a [secret](./secrets.md).
 
 ```yaml
 jwt_secret: v3ry_important_s3cr3t

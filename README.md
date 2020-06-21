@@ -28,11 +28,8 @@ The architecture is shown in the diagram below.
   <img src="./docs/images/archi.png"/>
 </p>
 
-**BREAKING NEWS: Authelia v4 has been released!
-Please read BREAKING.md if you want to migrate from v3 to v4. Otherwise, start fresh in v4 and enjoy!**
-
-**Authelia** can be installed as a standalone service from the [AUR](https://aur.archlinux.org/packages/authelia/), using a [Static binary](https://github.com/authelia/authelia/releases/latest), [Docker]
-or can also be deployed easily on [Kubernetes] leveraging ingress controllers and ingress configuration.
+**Authelia** can be installed as a standalone service from the [AUR](https://aur.archlinux.org/packages/authelia/), [FreeBSD Ports](https://svnweb.freebsd.org/ports/head/www/authelia/), or using a [Static binary](https://github.com/authelia/authelia/releases/latest),
+[Docker] or [Kubernetes] leveraging ingress controllers and ingress configurations. Assistance to publish a [debian package](https://github.com/authelia/authelia/issues/573) would be greatly appreciated.
 
 <p align="center">
   <img src="./docs/images/logos/kubernetes.logo.png" height="100"/>
@@ -63,6 +60,8 @@ Here is the list of the main available features:
 * Compatible with Kubernetes [ingress-nginx](https://github.com/kubernetes/ingress-nginx) controller out of the box.
 
 For more details about the features, follow [Features](https://docs.authelia.com/features/).
+
+If you want to know more about the roadmap, follow [Roadmap](https://docs.authelia.com/roadmap).
 
 ## Proxy support
 
@@ -102,33 +101,61 @@ This guide will show you how to deploy it on bare metal as well as on
 
 ## Security
 
-Security is taken very seriously here, therefore we follow the rule of responsible
-disclosure and we encourage you to do so.
+Authelia takes security very seriously. We follow the rule of
+[responsible disclosure](https://en.wikipedia.org/wiki/Responsible_disclosure), and we
+encourage the community to as well.
 
-Would you like to report any vulnerability discovered in Authelia, please first contact
-**clems4ever** on [Matrix](https://riot.im/app/#/room/#authelia:matrix.org) or by
-[email](mailto:clement.michaud34@gmail.com).
+If you discover a vulnerability in Authelia, please first contact one of the maintainers privately
+either via [Matrix](#matrix) or [email](#email) as described in the [contact options](#contact-options) below.
 
 For details about security measures implemented in Authelia, please follow
-this [link](https://docs.authelia.com/security/measures.html).
+this [link](https://docs.authelia.com/security/measures.html) and for reading about 
+the threat model follow this [link](https://docs.authelia.com/security/threat-model.html).
+
+### Contact Options
+
+#### Matrix
+
+Join the [Matrix Room](https://riot.im/app/#/room/#authelia:matrix.org) and locate one of the maintainers.
+You can identify them as they are the room administrators. Alternatively you can just ask for one of the
+maintainers. Once you've made contact we ask you privately message the maintainer to communicate the vulnerability.
+
+#### Email
+
+You can contact any of the maintainers for security vulnerability related issues by emailing 
+[security@authelia.com](mailto:security@authelia.com). This email is strictly reserved for security and vulnerability
+disclosure related matters. If you need to contact us for another reason please use [Matrix](#matrix) or
+[team@authelia.com](mailto:team@authelia.com).
 
 ## Breaking changes
 
 See [BREAKING](./BREAKING.md).
+
+## Why Open Source?
+
+You might wonder why Authelia is open source while it adds a great deal of security and user experience to your infrastructure at zero cost.
+It is open source because we firmly believe that security should be available for all to benefit in the face the battlefield which is the Internet
+with near zero effort.
+
+Additionally, keeping the code open source is a way to leave it auditable by anyone who is willing to contribute. This way, you can be confident
+that the product remains secure and does not act maliciously.
+
+It's important to keep in mind Authelia is not directly exposed on the
+Internet (your reverse proxies are) however, it's still the control plane for your internal security so take care of it!
 
 ## Contribute
 
 If you want to contribute to Authelia, check the documentation available
 [here](https://docs.authelia.com/contributing/).
 
-## Contributors
-
-Authelia exists thanks to all the people who contribute. [[Contribute](./CONTRIBUTING.md)].
+Authelia exists thanks to all the people who contribute so don't be shy,
+come chat with us on [Matrix](#matrix) and start contributing too. [[Contribute](./CONTRIBUTING.md)].
 <a href="https://github.com/authelia/authelia/graphs/contributors"><img src="https://opencollective.com/authelia-sponsors/contributors.svg?width=890" /></a>
 
 ## Backers
 
 Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/authelia-sponsors/contribute)] and help us sustain our community.
+The money we currently receive is dedicated to bootstrap a bug bounty program to give us as many eyes as we can to detect potential vulnerabilities.
 <a href="https://opencollective.com/authelia-sponsors#backers"><img src="https://opencollective.com/authelia-sponsors/backers.svg?width=890"></a>
 
 ## Sponsors
@@ -150,6 +177,8 @@ Support Authelia by becoming a sponsor. Your logo will show up here with a link 
 
 **Authelia** is **licensed** under the **[Apache 2.0]** license. The terms of the license are detailed
 in [LICENSE](./LICENSE).
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauthelia%2Fauthelia.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fauthelia%2Fauthelia?ref=badge_large)
 
 
 [Apache 2.0]: https://www.apache.org/licenses/LICENSE-2.0

@@ -3,12 +3,13 @@ package server
 import (
 	"fmt"
 	"os"
-	"path"
+	"strconv"
 
 	duoapi "github.com/duosecurity/duo_api_golang"
 	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/expvarhandler"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"github.com/valyala/fasthttp/pprofhandler"
 
 	"github.com/authelia/authelia/internal/configuration/schema"
@@ -21,72 +22,78 @@ import (
 // StartServer start Authelia server with the given configuration and providers.
 func StartServer(configuration schema.Configuration, providers middlewares.Providers) {
 	autheliaMiddleware := middlewares.AutheliaMiddleware(configuration, providers)
-	publicDir := os.Getenv("PUBLIC_DIR")
-	if publicDir == "" {
-		publicDir = "./public_html"
+	embeddedAssets := "/public_html"
+	rememberMe := strconv.FormatBool(configuration.Session.RememberMeDuration != "0")
+	resetPassword := strconv.FormatBool(!configuration.AuthenticationBackend.DisableResetPassword)
+
+	rootFiles := []string{"favicon.ico", "manifest.json", "robots.txt"}
+
+	serveIndexHandler := ServeIndex(embeddedAssets, configuration.Server.Path, rememberMe, resetPassword)
+
+	r := router.New()
+	r.GET("/", serveIndexHandler)
+
+	for _, f := range rootFiles {
+		r.GET("/"+f, fasthttpadaptor.NewFastHTTPHandler(br.Serve(embeddedAssets)))
 	}
-	logging.Logger().Infof("Selected public_html directory is %s", publicDir)
 
-	router := router.New()
-	router.GET("/", fasthttp.FSHandler(publicDir, 0))
-	router.ServeFiles("/static/{filepath:*}", publicDir+"/static")
+	r.GET("/static/{filepath:*}", fasthttpadaptor.NewFastHTTPHandler(br.Serve(embeddedAssets)))
 
-	router.GET("/api/state", autheliaMiddleware(handlers.StateGet))
+	r.GET("/api/state", autheliaMiddleware(handlers.StateGet))
 
-	router.GET("/api/configuration", autheliaMiddleware(handlers.ConfigurationGet))
-	router.GET("/api/configuration/extended", autheliaMiddleware(
-		middlewares.RequireFirstFactor(handlers.ExtendedConfigurationGet)))
+	r.GET("/api/configuration", autheliaMiddleware(
+		middlewares.RequireFirstFactor(handlers.ConfigurationGet)))
 
-	router.GET("/api/verify", autheliaMiddleware(handlers.VerifyGet))
-	router.HEAD("/api/verify", autheliaMiddleware(handlers.VerifyGet))
+	r.GET("/api/verify", autheliaMiddleware(handlers.VerifyGet(configuration.AuthenticationBackend)))
+	r.HEAD("/api/verify", autheliaMiddleware(handlers.VerifyGet(configuration.AuthenticationBackend)))
 
-	router.POST("/api/firstfactor", autheliaMiddleware(handlers.FirstFactorPost))
-	router.POST("/api/logout", autheliaMiddleware(handlers.LogoutPost))
+	r.POST("/api/firstfactor", autheliaMiddleware(handlers.FirstFactorPost(1000, true)))
+	r.POST("/api/logout", autheliaMiddleware(handlers.LogoutPost))
 
-	// only register endpoints if forgot password is not disabled
+	// Only register endpoints if forgot password is not disabled.
 	if !configuration.AuthenticationBackend.DisableResetPassword {
 		// Password reset related endpoints.
-		router.POST("/api/reset-password/identity/start", autheliaMiddleware(
+		r.POST("/api/reset-password/identity/start", autheliaMiddleware(
 			handlers.ResetPasswordIdentityStart))
-		router.POST("/api/reset-password/identity/finish", autheliaMiddleware(
+		r.POST("/api/reset-password/identity/finish", autheliaMiddleware(
 			handlers.ResetPasswordIdentityFinish))
-		router.POST("/api/reset-password", autheliaMiddleware(
+		r.POST("/api/reset-password", autheliaMiddleware(
 			handlers.ResetPasswordPost))
 	}
 
-	// Information about the user
-	router.GET("/api/user/info", autheliaMiddleware(
+	// Information about the user.
+	r.GET("/api/user/info", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.UserInfoGet)))
-	router.POST("/api/user/info/2fa_method", autheliaMiddleware(
+	r.POST("/api/user/info/2fa_method", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.MethodPreferencePost)))
 
-	// TOTP related endpoints
-	router.POST("/api/secondfactor/totp/identity/start", autheliaMiddleware(
+	// TOTP related endpoints.
+	r.POST("/api/secondfactor/totp/identity/start", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.SecondFactorTOTPIdentityStart)))
-	router.POST("/api/secondfactor/totp/identity/finish", autheliaMiddleware(
+	r.POST("/api/secondfactor/totp/identity/finish", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.SecondFactorTOTPIdentityFinish)))
-	router.POST("/api/secondfactor/totp", autheliaMiddleware(
+	r.POST("/api/secondfactor/totp", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.SecondFactorTOTPPost(&handlers.TOTPVerifierImpl{
 			Period: uint(configuration.TOTP.Period),
 			Skew:   uint(*configuration.TOTP.Skew),
 		}))))
 
-	// U2F related endpoints
-	router.POST("/api/secondfactor/u2f/identity/start", autheliaMiddleware(
+	// U2F related endpoints.
+	r.POST("/api/secondfactor/u2f/identity/start", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.SecondFactorU2FIdentityStart)))
-	router.POST("/api/secondfactor/u2f/identity/finish", autheliaMiddleware(
+	r.POST("/api/secondfactor/u2f/identity/finish", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.SecondFactorU2FIdentityFinish)))
 
-	router.POST("/api/secondfactor/u2f/register", autheliaMiddleware(
+	r.POST("/api/secondfactor/u2f/register", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.SecondFactorU2FRegister)))
 
-	router.POST("/api/secondfactor/u2f/sign_request", autheliaMiddleware(
+	r.POST("/api/secondfactor/u2f/sign_request", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.SecondFactorU2FSignGet)))
 
-	router.POST("/api/secondfactor/u2f/sign", autheliaMiddleware(
+	r.POST("/api/secondfactor/u2f/sign", autheliaMiddleware(
 		middlewares.RequireFirstFactor(handlers.SecondFactorU2FSignPost(&handlers.U2FVerifierImpl{}))))
 
-	// Configure DUO api endpoint only if configuration exists
+	// Configure DUO api endpoint only if configuration exists.
 	if configuration.DuoAPI != nil {
 		var duoAPI duo.API
 		if os.Getenv("ENVIRONMENT") == "dev" {
@@ -101,30 +108,38 @@ func StartServer(configuration schema.Configuration, providers middlewares.Provi
 				configuration.DuoAPI.Hostname, ""))
 		}
 
-		router.POST("/api/secondfactor/duo", autheliaMiddleware(
+		r.POST("/api/secondfactor/duo", autheliaMiddleware(
 			middlewares.RequireFirstFactor(handlers.SecondFactorDuoPost(duoAPI))))
 	}
 
-	// If trace is set, enable pprofhandler and expvarhandler
+	// If trace is set, enable pprofhandler and expvarhandler.
 	if configuration.LogLevel == "trace" {
-		router.GET("/debug/pprof/{name?}", pprofhandler.PprofHandler)
-		router.GET("/debug/vars", expvarhandler.ExpvarHandler)
+		r.GET("/debug/pprof/{name?}", pprofhandler.PprofHandler)
+		r.GET("/debug/vars", expvarhandler.ExpvarHandler)
 	}
 
-	router.NotFound = func(ctx *fasthttp.RequestCtx) {
-		ctx.SendFile(path.Join(publicDir, "index.html"))
+	r.NotFound = serveIndexHandler
+
+	handler := middlewares.LogRequestMiddleware(r.Handler)
+	if configuration.Server.Path != "" {
+		handler = middlewares.StripPathMiddleware(handler)
 	}
 
 	server := &fasthttp.Server{
-		Handler: middlewares.LogRequestMiddleware(router.Handler),
+		ErrorHandler:          autheliaErrorHandler,
+		Handler:               handler,
+		NoDefaultServerHeader: true,
+		ReadBufferSize:        configuration.Server.ReadBufferSize,
+		WriteBufferSize:       configuration.Server.WriteBufferSize,
 	}
+
 	addrPattern := fmt.Sprintf("%s:%d", configuration.Host, configuration.Port)
 
 	if configuration.TLSCert != "" && configuration.TLSKey != "" {
-		logging.Logger().Infof("Authelia is listening for TLS connections on %s", addrPattern)
+		logging.Logger().Infof("Authelia is listening for TLS connections on %s%s", addrPattern, configuration.Server.Path)
 		logging.Logger().Fatal(server.ListenAndServeTLS(addrPattern, configuration.TLSCert, configuration.TLSKey))
 	} else {
-		logging.Logger().Infof("Authelia is listening for non-TLS connections on %s", addrPattern)
+		logging.Logger().Infof("Authelia is listening for non-TLS connections on %s%s", addrPattern, configuration.Server.Path)
 		logging.Logger().Fatal(server.ListenAndServe(addrPattern))
 	}
 }

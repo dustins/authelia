@@ -60,10 +60,10 @@ func secondFactorTOTPIdentityFinish(ctx *middlewares.AutheliaCtx, username strin
 		Base32Secret: key.Secret(),
 	}
 
-	ctx.SetJSONBody(response)
+	ctx.SetJSONBody(response) //nolint:errcheck // TODO: Legacy code, consider refactoring time permitting.
 }
 
-// SecondFactorTOTPIdentityFinish the handler for finishing the identity validation
+// SecondFactorTOTPIdentityFinish the handler for finishing the identity validation.
 var SecondFactorTOTPIdentityFinish = middlewares.IdentityVerificationFinish(
 	middlewares.IdentityVerificationFinishArgs{
 		ActionClaim:          TOTPRegistrationAction,

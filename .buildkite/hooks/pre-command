@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set +u
 
 if [[ $BUILDKITE_LABEL =~ ":selenium:" ]]; then
-  DEFAULT_ARCH=amd64
+  DEFAULT_ARCH=coverage
   echo "--- :docker: Extract, load and tag build container"
   buildkite-agent artifact download "authelia-image-${DEFAULT_ARCH}*" .
   zstdcat authelia-image-${DEFAULT_ARCH}.tar.zst | docker load
@@ -16,5 +16,5 @@ if [[ $BUILDKITE_LABEL =~ ":docker: Deploy Image" ]]; then
 fi
 
 if [[ $BUILDKITE_LABEL == ":github: Deploy Artifacts" ]]; then
-  buildkite-agent artifact download "authelia-*-*.tar.gz*" .
+  buildkite-agent artifact download "authelia-*.tar.gz*" .
 fi
